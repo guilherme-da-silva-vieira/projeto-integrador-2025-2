@@ -14,6 +14,8 @@ app.get("/tasks", (req, res) => res.json(tasks));
 
 app.post("/tasks", (req, res) => {
   const { title } = req.body; // retira a variável title do objeto req.body
+  console.log(req.body);
+  console.log(title);
   // testa title é válida
   if (!title) return res.status(400).json({ error: "title é obrigatório" });
   const task = { id: nextId++, title, done: false };
