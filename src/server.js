@@ -1,20 +1,45 @@
-import express from 'express';
+import express from "express";
 
 const app = express();
+app.use(express.json());
 
-app.get("/", (req,res) =>
-    {
-        res.send("Olá mundo!!!");
-    }
-);
+// rota de saúde
+app.get("/health", (req, res) => res.json({ ok: true }));
 
-app.get("/html",(req,res) => {
-    res.send("<h1>Teste HTML</h1>");
-}
+// mini-API de tarefas em memória (sem banco ainda)
+const tasks = []; // [{id, title, done}]
+let nextId = 1;
 
-);
+app.get("/tasks", (req, res) => res.json(tasks));
 
-app.listen(3000, () =>
-    console.log('Servidor sendo executado em http://localhost:3000')
-);
+app.post("/tasks", (req, res) => {
+  const { title } = req.body; // retira a variável title do objeto req.body
+  // testa title é válida
+  if (!title) return res.status(400).json({ error: "title é obrigatório" });
+  const task = { id: nextId++, title, done: false };
+  tasks.push(task);
+  res.status(201).json(task);
+});
 
+app.patch("/tasks/:id", (req, res) => {
+  // Pega o valor req.params.id enviado como parâmetro de rota
+  // Tenta converter ele para inteiro
+  const id = Number(req.params.id);
+  // Faz uma busca no vetor para encontrar o id desejado
+  const task = tasks.find(t => t.id === id);
+  if (!task) return res.status(404).json({ error: "não encontrada" });
+  if (typeof req.body.done === "boolean") task.done = req.body.done;
+  if (typeof req.body.title === "string") task.title = req.body.title;
+  res.json(task);
+});
+
+app.delete("/tasks/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const i = tasks.findIndex(t => t.id === id);
+  if (i === -1) return res.status(404).json({ error: "não encontrada" });
+  tasks.splice(i, 1);
+  res.status(204).send();
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`API rodando em http://localhost:${PORT}`));
