@@ -18,7 +18,9 @@ app.post("/tasks", (req, res) => {
   console.log(title);
   // testa title é válida
   if (!title) return res.status(400).json({ error: "title é obrigatório" });
+  //criando nova task
   const task = { id: nextId++, title, done: false };
+  //adicionando a nova task no array
   tasks.push(task);
   res.status(201).json(task);
 });
