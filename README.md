@@ -1,17 +1,16 @@
 # Verbetepédia
 - Projeto do Guilherme no semestre 2025.2
-- Enciclopédia Virtual
+- Chat(Bate papo)
 
 ## Problema
-- Implementação de um sistema de uma enciclopédia virtual onde é possível visualizar verbetes e se houver algum usuário cadastrado pode fazer alterações e criar verbetes
-
+- Uma pessoa precisa conversar com a outra
 ## Tabelas
-### Arquivos
-|Campo              | Tipo          | Obrigatório | Exemplo         |
-|-------------------|---------------|-------------|-----------------|
-| id                | número        | sim         | 2               |
-| Usuário_id        | número(fk)    | sim         | 5               | 
-| nome              | texto         | sim         | "index.html"    |
-| tipo              | numérico      | sim         | 3               |
-| caminho           | varchar(255)  | sim         | /img/icone.png  |
-| dataCriação       | TIMESTEMP     | sim         | 2025-08-29      |
+### Mensagens
+| Campo			        | Tipo		    | Obrigatório 	| Exemplo 			            |
+|-----------------------|---------------|---------------|-------------------------------|
+| id			        | inteiro(pk)	| sim		    | 1	  			                |
+| usuarios_id		    | inteiro(fk)	| sim		    | 5	  			                |  
+| destinatario_id	    | inteiro(fk)	| sim		    | 32	  			            |
+| mensagem		        | texto		    | sim		    | "OI"	  	                    |
+| dataCriacao		    | data/hora	    | sim           | 2025-08-20 14:35		        |
+| dataAtualizacao	    | data/hora	    | sim		    | 2025-09-20 14:50              |
