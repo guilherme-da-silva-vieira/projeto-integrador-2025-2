@@ -1,4 +1,4 @@
-# PAPO
+# PAPOTALK
 - Projeto do Guilherme no semestre 2025.2
 - Chat(Bate papo)
 
