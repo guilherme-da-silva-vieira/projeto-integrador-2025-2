@@ -61,14 +61,14 @@ app.get("/", async (_req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// LISTAR TODOS (GET /produtos)
+// LISTAR TODOS (GET /api/mensagens)
 // -----------------------------------------------------------------------------
-// Objetivo: trazer todos os produtos em ordem decrescente de id.
+// Objetivo: trazer todos as mensagens em ordem decrescente de id.
 // Dica: pool.query retorna um objeto, e a propriedade "rows" contém as linhas.
-app.get("/produtos", async (_req, res) => {
+app.get("/api/mensagens", async (_req, res) => {
     try {
         // Desestruturação: extraímos apenas "rows" do objeto retornado.
-        const { rows } = await pool.query("SELECT * FROM produtos ORDER BY id DESC");
+        const { rows } = await pool.query("SELECT * FROM mensagens ORDER BY id DESC");
         res.json(rows); // retorna um array de objetos (cada objeto é um produto)
     } catch {
         res.status(500).json({ erro: "erro interno" });
@@ -76,11 +76,11 @@ app.get("/produtos", async (_req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// MOSTRAR UM (GET /produtos/:id)
+// MOSTRAR UM (GET /api/mensagens/:id)
 // -----------------------------------------------------------------------------
-// Objetivo: buscar UM produto específico pelo id.
+// Objetivo: buscar UMA mensagem específica pelo id.
 // Observação: parâmetros de rota (":id") chegam como string e precisamos converter.
-app.get("/produtos/:id", async (req, res) => {
+app.get("/api/mensagens/:id", async (req, res) => {
     // req.params.id é SEMPRE string; usamos Number(...) para converter.
     const id = Number(req.params.id);
 
@@ -88,13 +88,13 @@ app.get("/produtos/:id", async (req, res) => {
     // - Number.isInteger(id): checa se é número inteiro (NaN falha aqui).
     // - id <= 0: não aceitamos ids zero ou negativos.
     if (!Number.isInteger(id) || id <= 0) {
+        //return para finalizar a execução da requisição inválida
         return res.status(400).json({ erro: "id inválido" });
     }
 
     try {
         // Consulta parametrizada: $1 será substituído pelo valor de "id".
-        const result = await pool.query("SELECT * FROM produtos WHERE id = $1", [id]);
-
+        const result = await pool.query("SELECT * FROM mensagens WHERE id = $1", [id]);
         // "rows" é um array de linhas. Se não houver primeira linha, não achou.
         const { rows } = result;
         if (!rows[0]) return res.status(404).json({ erro: "não encontrado" });
