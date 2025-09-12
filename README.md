@@ -26,7 +26,7 @@
 | dataCriacao     | data/hora                     | sim         | 2025-08-20 14:30   |
 | dataAtualizacao | data/hora                     | sim         | 2025-08-20 15:10   |
 
-### SQL
+### SQL(Modelagem do Postgres)
 
 ```sql
 -- ========= REMOÇÃO DAS TABELAS (SE EXISTIREM) =========
