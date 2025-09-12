@@ -48,9 +48,9 @@ app.get("/", async (_req, res) => {
         const rotas = {
             "LISTAR": "GET /api/mensagens",
             "MOSTRAR": "GET /api/mensagens/:id",
-            "CRIAR": "POST /api/mensagens BODY: { 'usuarios_id': Number, 'destinatario_id':Number, 'mensagem':string}",
-            "SUBSTITUIR": "PUT /api/mensagens/:id BODY: { 'usuarios_id': Number, 'destinatario_id': Number, 'mensagem': string}",
-            "ATUALIZAR": "PATCH /api/mensagens/:id BODY: { 'usuarios_id': Number || 'destinatario_id': Number || 'mensagem': string }",
+            "CRIAR": "POST /api/mensagens BODY: { 'usuarios_id': number, 'destinatario_id': number, 'mensagem': string }",
+            "SUBSTITUIR": "PUT /api/mensagens/:id BODY: { 'usuarios_id': number, 'destinatario_id': number, 'mensagem': string }",
+            "ATUALIZAR": "PATCH /api/mensagens/:id BODY: { 'usuarios_id': number || 'destinatario_id': number || 'mensagem': string }",
             "DELETAR": "DELETE /api/mensagens/:id",
         };
         res.json(rotas); // Envia um objeto JS como JSON (status 200 por padrão)
