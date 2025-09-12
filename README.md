@@ -53,20 +53,11 @@ CREATE TABLE Usuarios (
 -- Armazena as mensagens trocadas entre os usuários.
 CREATE TABLE Mensagens (
     id SERIAL PRIMARY KEY,
-    usuarios_id INTEGER NOT NULL,
-    destinatario_id INTEGER NOT NULL,
+    usuarios_id INTEGER NOT NULL REFERENCES Usuarios(id),
+    destinatario_id INTEGER NOT NULL REFERENCES Usuarios(id),
     mensagem TEXT NOT NULL,
     dataCriacao TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    dataAtualizacao TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-
-    -- Define a relação de chave estrangeira com a tabela de usuários
-    CONSTRAINT fk_remetente
-        FOREIGN KEY(usuarios_id)
-        REFERENCES Usuarios(id),
-
-    CONSTRAINT fk_destinatario
-        FOREIGN KEY(destinatario_id)
-        REFERENCES Usuarios(id)
+    dataAtualizacao TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 
