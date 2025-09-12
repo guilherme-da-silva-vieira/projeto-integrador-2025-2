@@ -46,12 +46,12 @@ app.use(express.json());
 app.get("/", async (_req, res) => {
     try {
         const rotas = {
-            "LISTAR": "GET /produtos",
-            "MOSTRAR": "GET /produtos/:id",
-            "CRIAR": "POST /produtos BODY: { nome: 'string', preco: Number }",
-            "SUBSTITUIR": "PUT /produtos/:id BODY: { nome: 'string', preco: Number }",
-            "ATUALIZAR": "PATCH /produtos/:id BODY: { nome: 'string' || preco: Number }",
-            "DELETAR": "DELETE /produtos/:id",
+            "LISTAR": "GET /api/mensagens",
+            "MOSTRAR": "GET /api/mensagens/:id",
+            "CRIAR": "POST /api/mensagens BODY: { 'usuarios_id': Number, 'destinatario_id':Number, 'mensagem':string}",
+            "SUBSTITUIR": "PUT /api/mensagens/:id BODY: { 'usuarios_id': Number, 'destinatario_id': Number, 'mensagem': string}",
+            "ATUALIZAR": "PATCH /api/mensagens/:id BODY: { 'usuarios_id': Number || 'destinatario_id': Number || 'mensagem': string }",
+            "DELETAR": "DELETE /api/mensagens/:id",
         };
         res.json(rotas); // Envia um objeto JS como JSON (status 200 por padrão)
     } catch {
