@@ -133,7 +133,7 @@ app.post("/api/mensagens", async (req, res) => {
         );
 
         // rows[0] contém o objeto recém-inserido (com id gerado, etc.)
-        res.status(201).json(rows[0]); // 201 Created → recurso criado com sucesso
+        res.status(201).json(rows[0]); // 201 Created -> recurso criado com sucesso
     } catch {
         res.status(500).json({ erro: "erro interno" });
     }
