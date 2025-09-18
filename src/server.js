@@ -99,7 +99,7 @@ app.get("/api/mensagens/:id", async (req, res) => {
         const { rows } = result;
         if (!rows[0]) return res.status(404).json({ erro: "não encontrado" });
 
-        // Achou: devolve o primeiro (e único) produto.
+        // Achou: devolve o primeiro (e único) mensagens.
         res.json(rows[0]);
     } catch {
         res.status(500).json({ erro: "erro interno" });
@@ -107,34 +107,29 @@ app.get("/api/mensagens/:id", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// CRIAR (POST /produtos)
+// CRIAR (POST /mensagens)
 // -----------------------------------------------------------------------------
-// Objetivo: inserir um novo produto. Espera-se receber JSON com { nome, preco }.
+// Objetivo: inserir um novo produto. Espera-se receber JSON com { 'usuarios_id': number, 'destinatario_id': number, 'mensagem': string }.
 // Observações:
 // - req.body pode ser "undefined" se o cliente não enviar JSON; por isso usamos "?? {}"
 //   para ter um objeto vazio como padrão (evita erro ao desestruturar).
-app.post("/produtos", async (req, res) => {
-    // Extraímos "nome" e "preco" do corpo. Se req.body for undefined, vira {}.
-    const { nome, preco } = req.body ?? {};
+app.post("/api/mensagens", async (req, res) => {
+    // Extraímos elementos da mensagem do corpo. Se req.body for undefined, vira {}.
+    const { usuarios_id, destinatario_id,  mensagem} = req.body ?? {};
 
-    // Convertendo "preco" em número. Se falhar, vira NaN.
-    const p = Number(preco);
-
-    // Validações:
-    // - !nome → nome ausente, vazio, null, etc. (falsy)
-    // - preco == null → captura especificamente null (e também undefined)
-    //   Observação: usamos == de propósito para cobrir null/undefined juntos.
-    // - Number.isNaN(p) → conversão falhou (ex.: "abc")
-    // - p < 0 → preço negativo não é permitido
-    if (!nome || preco == null || Number.isNaN(p) || p < 0) {
-        return res.status(400).json({ erro: "nome e preco (>= 0) obrigatórios" });
+    // Convertendo "ids" em número. Se falhar, vira NaN.
+    const uId = Number(usuarios_id);
+    const dId = Number(destinatario_id);
+    if (!mensagem || typeof(mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1 || uId == dId) {
+        return res.status(400).json({ erro: `usuarios_id, destinatario_id(Number >= 0 && uId != dId) e 
+            mensagem(tipo string e não vazio) são obrigatórios` });
     }
 
     try {
         // INSERT com retorno: RETURNING * devolve a linha criada.
         const { rows } = await pool.query(
-            "INSERT INTO produtos (nome, preco) VALUES ($1, $2) RETURNING *",
-            [nome, p]
+            "INSERT INTO mensagens (usuarios_id, destinatario_id, mensagem) VALUES ($1, $2, $3) RETURNING *",
+            [uId, dId, mensagem]
         );
 
         // rows[0] contém o objeto recém-inserido (com id gerado, etc.)
