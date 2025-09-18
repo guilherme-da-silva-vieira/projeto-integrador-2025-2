@@ -147,7 +147,6 @@ app.post("/api/mensagens", async (req, res) => {
 app.put("/api/mensagens/:id", async (req, res) => {
     const id = Number(req.params.id);
     const { usuarios_id, destinatario_id,  mensagem } = req.body ?? {};
-    const mId = Number(id);
     const uId = Number(usuarios_id);
     const dId = Number(destinatario_id);
 
