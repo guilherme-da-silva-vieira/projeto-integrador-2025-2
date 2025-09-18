@@ -142,18 +142,23 @@ app.post("/api/mensagens", async (req, res) => {
 // -----------------------------------------------------------------------------
 // SUBSTITUIR (PUT /produtos/:id)
 // -----------------------------------------------------------------------------
-// Objetivo: substituir TODOS os campos do produto (put = envia o recurso completo).
-// Requer: { nome, preco } válidos.
-app.put("/produtos/:id", async (req, res) => {
+// Objetivo: substituir TODOS os campos da mensagem (put = envia o recurso completo).
+// Requer: { valores } válidos.
+app.put("/api/mensagens/:id", async (req, res) => {
     const id = Number(req.params.id);
-    const { nome, preco } = req.body ?? {};
-    const p = Number(preco);
+    const { usuarios_id, destinatario_id,  mensagem } = req.body ?? {};
+    const mId = Number(id);
+    const uId = Number(usuarios_id);
+    const dId = Number(destinatario_id);
 
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ erro: "id inválido" });
     }
-    if (!nome || preco == null || Number.isNaN(p) || p < 0) {
-        return res.status(400).json({ erro: "nome e preco (>= 0) obrigatórios" });
+    if (!mensagem || typeof(mensagem) != 'string' || uId == null || dId == null 
+    || Number.isNaN(uId) || Number.isNaN(dId) 
+    || uId < 1 || dId < 1 || uId == dId) {
+        return res.status(400).json({ erro: `usuarios_id, destinatario_id(Number >= 0 && uId != dId) e 
+            mensagem(tipo string e não vazio) são obrigatórios` });
     }
 
     try {
