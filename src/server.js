@@ -120,7 +120,8 @@ app.post("/api/mensagens", async (req, res) => {
     // Convertendo "ids" em número. Se falhar, vira NaN.
     const uId = Number(usuarios_id);
     const dId = Number(destinatario_id);
-    if (!mensagem || typeof(mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1 || uId == dId) {
+    if (!mensagem || typeof(mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1 
+    || uId == dId) {
         return res.status(400).json({ erro: `usuarios_id, destinatario_id(Number >= 0 && uId != dId) e 
             mensagem(tipo string e não vazio) são obrigatórios` });
     }
@@ -177,7 +178,7 @@ app.put("/api/mensagens/:id", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// ATUALIZAR PARCIALMENTE (PATCH /produtos/:id)
+// ATUALIZAR PARCIALMENTE (PATCH /api/mensagens/:id)
 // -----------------------------------------------------------------------------
 // Objetivo: atualizar APENAS os campos enviados.
 // Regras:
@@ -186,9 +187,13 @@ app.put("/api/mensagens/:id", async (req, res) => {
 // Como fazemos isso no SQL?
 // - COALESCE(a, b) devolve "a" quando "a" NÃO é NULL; caso seja NULL, devolve "b".
 // - Então passamos "null" para campos não enviados, e o COALESCE usa o valor atual do banco.
-app.patch("/produtos/:id", async (req, res) => {
+app.patch("/api/mensagens/:id", async (req, res) => {
     const id = Number(req.params.id);
-    const { nome, preco } = req.body ?? {};
+    const { usuarios_id, destinatario_id,  mensagem } = req.body ?? {};
+
+    const uId = Number(usuarios_id);
+    const dId = Number(destinatario_id);
+
 
     // Validação do id
     if (!Number.isInteger(id) || id <= 0) {
@@ -196,16 +201,14 @@ app.patch("/produtos/:id", async (req, res) => {
     }
 
     // Se nenhum campo foi enviado, não há o que atualizar.
-    if (nome === undefined && preco === undefined) {
-        return res.status(400).json({ erro: "envie nome e/ou preco" });
+    if (mensagem === undefined && destinatario_id === undefined && usuarios_id === undefined) {
+        return res.status(400).json({ erro: "envie usuarios_id, destinatarios_id e/ou mensagem" });
     }
 
-    // Validamos "preco" somente se ele foi enviado.
-    // Se não foi enviado, manteremos "p = null" para avisar o COALESCE a não mexer no preço.
-    let p = null;
-    if (preco !== undefined) {
-        p = Number(preco);
-        if (Number.isNaN(p) || p < 0) {
+    // Validamos "usuarios_id" e "destinario_id" somente se ele foi enviado.
+    // Se não foi enviado, manteremos "n = null" para avisar o COALESCE a não mexer no preço.
+    if (usuarios_id !== undefined || destinatario_id !== undefined) {
+        if (Number.isNaN(uId) || uId < 0 || Number.isNaN(dId) || dId < 0) {
             return res.status(400).json({ erro: "preco deve ser número >= 0" });
         }
     }
@@ -214,8 +217,9 @@ app.patch("/produtos/:id", async (req, res) => {
         // Para "nome": se não veio (undefined), usamos nome ?? null → null
         // No SQL: COALESCE($1, nome) manterá o valor antigo quando $1 for NULL.
         const { rows } = await pool.query(
-            "UPDATE produtos SET nome = COALESCE($1, nome), preco = COALESCE($2, preco) WHERE id = $3 RETURNING *",
-            [nome ?? null, p, id]
+            `UPDATE mensagens SET mensagem = COALESCE($1, mensagem), usuarios_id = COALESCE($2, usuarios_id), 
+            destinatario_id = COALESCE($3, destinatario_id) WHERE id = $4 RETURNING *`,
+            [mensagem ?? null, usuarios_id ?? null, destinatario_id ?? null, id]
         );
 
         if (!rows[0]) return res.status(404).json({ erro: "não encontrado" });
@@ -226,11 +230,11 @@ app.patch("/produtos/:id", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// DELETAR (DELETE /produtos/:id)
+// DELETAR (DELETE /api/mensagens/:id)
 // -----------------------------------------------------------------------------
 // Objetivo: remover um produto existente.
 // Retornamos 204 No Content quando dá certo (sem corpo na resposta).
-app.delete("/produtos/:id", async (req, res) => {
+app.delete("/api/mensagens/:id", async (req, res) => {
     const id = Number(req.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
@@ -239,7 +243,7 @@ app.delete("/produtos/:id", async (req, res) => {
 
     try {
         // RETURNING id nos permite saber se algo foi realmente deletado.
-        const r = await pool.query("DELETE FROM produtos WHERE id = $1 RETURNING id", [id]);
+        const r = await pool.query("DELETE FROM mensagens WHERE id = $1 RETURNING id", [id]);
 
         // r.rowCount é o número de linhas afetadas. Se 0, o id não existia.
         if (!r.rowCount) return res.status(404).json({ erro: "não encontrado" });
