@@ -1,48 +1,33 @@
-// OBJETIVO DESTE ARQUIVO
-// -----------------------------------------------------------------------------
-// Este arquivo cria uma pequena API REST de "mensagens" usando:
-// - Express (framework HTTP para Node.js)
-// - PostgreSQL (acesso via pool de conexões importado de ./db.js)
-//
-// COMO LER ESTE CÓDIGO (para iniciantes):
-// - Tudo que começa com // é comentário e NÃO é executado.
-// - "async/await" indica que estamos esperando operações assíncronas (ex.: acessar o banco).
-// - Em rotas, "req" é o pedido do cliente; "res" é a resposta do servidor.
-// - Ao final, chamamos app.listen(PORT) para iniciar o servidor HTTP.
-//
-// CÓDIGOS DE STATUS HTTP QUE USAMOS:
-// - 200 OK      → requisição deu certo e retornamos dados.
-// - 201 Created → criação de recurso deu certo e retornamos o que foi criado.
-// - 204 No Content → operação deu certo, mas não há corpo para enviar (por ex., DELETE).
-// - 400 Bad Request → o cliente enviou dados inválidos (ex.: id negativo).
-// - 404 Not Found   → não achamos o recurso pedido (ex.: produto inexistente).
-// - 500 Internal Server Error → um erro inesperado aconteceu no servidor.
-//
-// SOBRE SEGURANÇA E SQL:
-// - Usamos "queries parametrizadas" com $1, $2 etc. para evitar SQL Injection.
-//   Ex.: pool.query("SELECT ... WHERE id = $1", [id])
-// - Nunca concatenar valores vindos do usuário em strings de SQL.
-//
-// SOBRE JSON:
-// - app.use(express.json()) permite que o Express entenda JSON que chega no corpo
-//   da requisição (req.body).
-//
+/**
+ * @file Ficheiro principal da API de Mensagens
+ * @description Implementação de uma API RESTful para gerir mensagens, utilizando Express.js e PostgreSQL.
+ *
+ * @summary
+ * Este ficheiro configura um servidor Express para expor endpoints de um CRUD (Create, Read, Update, Delete)
+ * para uma entidade "mensagens". A ligação à base de dados é gerida por um pool de conexões.
+ *
+ * @notes
+ * - A segurança contra SQL Injection é assegurada através do uso de queries parametrizadas (ex: $1, $2).
+ * - O tratamento de erros é simplificado, retornando códigos de status HTTP apropriados para
+ * diferentes cenários (ex: 404 para não encontrado, 400 para dados inválidos).
+ */
+
 // -----------------------------------------------------------------------------
 // IMPORTAÇÕES E CONFIGURAÇÃO INICIAL
 // -----------------------------------------------------------------------------
 import express from "express";
-import { pool } from "./db.js"; // "pool" gerencia conexões com o PostgreSQL
+import { pool } from "./db.js"; // "pool" gere as conexões com o PostgreSQL
 const app = express();
 
-app.use(express.json()); 
-// ^ Middleware que transforma JSON recebido no body em objeto JS (req.body).
-//   Sem isso, req.body seria undefined para pedidos com JSON.
+app.use(express.json());
+// Middleware que interpreta o corpo (body) de requisições com `Content-Type: application/json`.
+// Converte a string JSON recebida num objeto JavaScript acessível via `req.body`.
 
 // -----------------------------------------------------------------------------
-// ROTA DE BOAS-VINDAS / DOCUMENTAÇÃO RÁPIDA (GET /)
+// ENDPOINT: GET / - Documentação da API
 // -----------------------------------------------------------------------------
-// Esta rota apenas lista, em JSON, as rotas disponíveis.
-// Útil como "home" da API para quem está testando no navegador.
+// Rota de entrada que serve como uma documentação rápida, listando todos
+// os endpoints disponíveis e como utilizá-los.
 app.get("/", async (_req, res) => {
     try {
         const rotas = {
@@ -53,53 +38,43 @@ app.get("/", async (_req, res) => {
             "ATUALIZAR": "PATCH /api/mensagens/:id BODY: { 'usuarios_id': number || 'destinatario_id': number || 'mensagem': string }",
             "DELETAR": "DELETE /api/mensagens/:id",
         };
-        res.json(rotas); // Envia um objeto JS como JSON (status 200 por padrão)
+        res.json(rotas);
     } catch {
-        // Em produção normalmente também registramos (logamos) o erro para análise.
         res.status(500).json({ erro: "erro interno" });
     }
 });
 
 // -----------------------------------------------------------------------------
-// LISTAR TODOS (GET /api/mensagens)
+// ENDPOINT: GET /api/mensagens - Listar todas as mensagens
 // -----------------------------------------------------------------------------
-// Objetivo: trazer todos as mensagens em ordem decrescente de id.
-// Dica: pool.query retorna um objeto, e a propriedade "rows" contém as linhas.
+// Recupera todos os registos da tabela `mensagens` e retorna-os num array JSON,
+// ordenados pelo `id` em ordem decrescente (as mais recentes primeiro).
 app.get("/api/mensagens", async (_req, res) => {
     try {
-        // Desestruturação: extraímos apenas "rows" do objeto retornado.
         const { rows } = await pool.query("SELECT * FROM mensagens ORDER BY id DESC");
-        res.json(rows); // retorna um array de objetos (cada objeto é um produto)
+        res.json(rows);
     } catch {
         res.status(500).json({ erro: "erro interno" });
     }
 });
 
 // -----------------------------------------------------------------------------
-// MOSTRAR UM (GET /api/mensagens/:id)
+// ENDPOINT: GET /api/mensagens/:id - Obter uma mensagem específica
 // -----------------------------------------------------------------------------
-// Objetivo: buscar UMA mensagem específica pelo id.
-// Observação: parâmetros de rota (":id") chegam como string e precisamos converter.
+// Procura e retorna uma única mensagem, identificada pelo `id` fornecido como
+// parâmetro na URL.
 app.get("/api/mensagens/:id", async (req, res) => {
-    // req.params.id é SEMPRE string; usamos Number(...) para converter.
     const id = Number(req.params.id);
 
-    // Validação do "id":
-    // - Number.isInteger(id): checa se é número inteiro (NaN falha aqui).
-    // - id <= 0: não aceitamos ids zero ou negativos.
     if (!Number.isInteger(id) || id <= 0) {
-        //return para finalizar a execução da requisição inválida
         return res.status(400).json({ erro: "id inválido" });
     }
 
     try {
-        // Consulta parametrizada: $1 será substituído pelo valor de "id".
         const result = await pool.query("SELECT * FROM mensagens WHERE id = $1", [id]);
-        // "rows" é um array de linhas. Se não houver primeira linha, não achou.
         const { rows } = result;
         if (!rows[0]) return res.status(404).json({ erro: "não encontrado" });
 
-        // Achou: devolve o primeiro (e único) mensagens.
         res.json(rows[0]);
     } catch {
         res.status(500).json({ erro: "erro interno" });
@@ -107,46 +82,42 @@ app.get("/api/mensagens/:id", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// CRIAR (POST /mensagens)
+// ENDPOINT: POST /api/mensagens - Criar uma nova mensagem
 // -----------------------------------------------------------------------------
-// Objetivo: inserir um novo produto. Espera-se receber JSON com { 'usuarios_id': number, 'destinatario_id': number, 'mensagem': string }.
-// Observações:
-// - req.body pode ser "undefined" se o cliente não enviar JSON; por isso usamos "?? {}"
-//   para ter um objeto vazio como padrão (evita erro ao desestruturar).
+// Insere uma nova mensagem na base de dados. Os dados necessários
+// (`usuarios_id`, `destinatario_id`, `mensagem`) devem ser enviados no corpo
+// da requisição em formato JSON.
 app.post("/api/mensagens", async (req, res) => {
-    // Extraímos elementos da mensagem do corpo. Se req.body for undefined, vira {}.
     const { usuarios_id, destinatario_id,  mensagem} = req.body ?? {};
 
-    // Convertendo "ids" em número. Se falhar, vira NaN.
     const uId = Number(usuarios_id);
     const dId = Number(destinatario_id);
-    if (!mensagem || typeof(mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1 
+    if (!mensagem || typeof(mensagem) != 'string' || uId == null || dId == null || Number.isNaN(uId) || Number.isNaN(dId) || uId < 1 || dId < 1
     || uId == dId) {
-        return res.status(400).json({ erro: `usuarios_id, destinatario_id(Number >= 0 && uId != dId) e 
-            mensagem(tipo string e não vazio) são obrigatórios` });
+        return res.status(400).json({ erro: `usuarios_id, destinatario_id(Number >= 0 && uId != dId) e
+                mensagem(tipo string e não vazio) são obrigatórios` });
     }
 
     try {
-        // INSERT com retorno: RETURNING * devolve a linha criada.
         const { rows } = await pool.query(
             "INSERT INTO mensagens (usuarios_id, destinatario_id, mensagem) VALUES ($1, $2, $3) RETURNING *",
             [uId, dId, mensagem]
         );
 
-        // rows[0] contém o objeto recém-inserido (com id gerado, etc.)
-        res.status(201).json(rows[0]); // 201 Created -> recurso criado com sucesso
+        res.status(201).json(rows[0]);
     } catch {
         res.status(500).json({ erro: "erro interno" });
     }
 });
 
 // -----------------------------------------------------------------------------
-// SUBSTITUIR (PUT /api/mensagens/:id)
+// ENDPOINT: PUT /api/mensagens/:id - Substituir uma mensagem
 // -----------------------------------------------------------------------------
-// Objetivo: substituir TODOS os campos da mensagem (put = envia o recurso completo).
-// Requer: { valores } válidos.
+// Atualiza um registo de mensagem existente, substituindo **todos** os seus
+// campos. Exige que o corpo da requisição contenha a representação completa
+// e válida do recurso.
 app.put("/api/mensagens/:id", async (req, res) => {
-    const id = Number(req.params.id);//parâmetro do id na url
+    const id = Number(req.params.id);
     const { usuarios_id, destinatario_id,  mensagem } = req.body ?? {};
     const uId = Number(usuarios_id);
     const dId = Number(destinatario_id);
@@ -154,39 +125,34 @@ app.put("/api/mensagens/:id", async (req, res) => {
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ erro: "id inválido" });
     }
-    if (!mensagem || typeof(mensagem) != 'string' || uId == null || dId == null 
-    || Number.isNaN(uId) || Number.isNaN(dId) 
+    if (!mensagem || typeof(mensagem) != 'string' || uId == null || dId == null
+    || Number.isNaN(uId) || Number.isNaN(dId)
     || uId < 1 || dId < 1 || uId == dId) {
-        return res.status(400).json({ erro: `usuarios_id, destinatario_id(Number >= 0 && uId != dId) e 
-            mensagem(tipo string e não vazio) são obrigatórios` });
+        return res.status(400).json({ erro: `usuarios_id, destinatario_id(Number >= 0 && uId != dId) e
+                mensagem(tipo string e não vazio) são obrigatórios` });
     }
 
     try {
-        // Atualiza ambos os campos sempre (sem manter valores antigos).
         const { rows } = await pool.query(
             `UPDATE mensagens SET usuarios_id = $1, destinatario_id = $2, mensagem = $3 WHERE id = $4 RETURNING *`,
             [usuarios_id, destinatario_id, mensagem, id]
         );
 
-        // Se não atualizou nenhuma linha, o id não existia.
         if (!rows[0]) return res.status(404).json({ erro: "não encontrado" });
 
-        res.json(rows[0]); // retorna o produto atualizado
+        res.json(rows[0]);
     } catch {
         res.status(500).json({ erro: "erro interno" });
     }
 });
 
 // -----------------------------------------------------------------------------
-// ATUALIZAR PARCIALMENTE (PATCH /api/mensagens/:id)
+// ENDPOINT: PATCH /api/mensagens/:id - Atualizar parcialmente uma mensagem
 // -----------------------------------------------------------------------------
-// Objetivo: atualizar APENAS os campos enviados.
-// Regras:
-// - Se "nome" não for enviado, mantemos o nome atual.
-// - Se "preco" não for enviado, mantemos o preço atual.
-// Como fazemos isso no SQL?
-// - COALESCE(a, b) devolve "a" quando "a" NÃO é NULL; caso seja NULL, devolve "b".
-// - Então passamos "null" para campos não enviados, e o COALESCE usa o valor atual do banco.
+// Modifica um ou mais campos de uma mensagem existente. Apenas os campos
+// presentes no corpo da requisição serão alterados. Campos omitidos
+// permanecerão com os seus valores atuais na base de dados, graças ao uso
+// da função COALESCE do SQL.
 app.patch("/api/mensagens/:id", async (req, res) => {
     const id = Number(req.params.id);
     const { usuarios_id, destinatario_id,  mensagem } = req.body ?? {};
@@ -195,18 +161,14 @@ app.patch("/api/mensagens/:id", async (req, res) => {
     const dId = Number(destinatario_id);
 
 
-    // Validação do id
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ erro: "id inválido" });
     }
 
-    // Se nenhum campo foi enviado, não há o que atualizar.
     if (mensagem === undefined && destinatario_id === undefined && usuarios_id === undefined) {
         return res.status(400).json({ erro: "envie usuarios_id, destinatarios_id e/ou mensagem" });
     }
 
-    // Validamos "usuarios_id" e "destinario_id" somente se ele foi enviado.
-    // Se não foi enviado, manteremos "n = null" para avisar o COALESCE a não mexer no preço.
     if (usuarios_id !== undefined) {
         if (Number.isNaN(uId) || uId < 0) {
             return res.status(400).json({ erro: "ids de usuario devem ser número >= 0" });
@@ -220,10 +182,8 @@ app.patch("/api/mensagens/:id", async (req, res) => {
     }
 
     try {
-        // Para "nome": se não veio (undefined), usamos nome ?? null → null
-        // No SQL: COALESCE($1, nome) manterá o valor antigo quando $1 for NULL.
         const { rows } = await pool.query(
-            `UPDATE mensagens SET mensagem = COALESCE($1, mensagem), usuarios_id = COALESCE($2, usuarios_id), 
+            `UPDATE mensagens SET mensagem = COALESCE($1, mensagem), usuarios_id = COALESCE($2, usuarios_id),
             destinatario_id = COALESCE($3, destinatario_id) WHERE id = $4 RETURNING *`,
             [mensagem ?? null, usuarios_id ?? null, destinatario_id ?? null, id]
         );
@@ -236,10 +196,9 @@ app.patch("/api/mensagens/:id", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// DELETAR (DELETE /api/mensagens/:id)
+// ENDPOINT: DELETE /api/mensagens/:id - Apagar uma mensagem
 // -----------------------------------------------------------------------------
-// Objetivo: remover um produto existente.
-// Retornamos 204 No Content quando dá certo (sem corpo na resposta).
+// Remove permanentemente uma mensagem da base de dados, identificada pelo seu `id`.
 app.delete("/api/mensagens/:id", async (req, res) => {
     const id = Number(req.params.id);
 
@@ -248,25 +207,23 @@ app.delete("/api/mensagens/:id", async (req, res) => {
     }
 
     try {
-        // RETURNING id nos permite saber se algo foi realmente deletado.
         const r = await pool.query("DELETE FROM mensagens WHERE id = $1 RETURNING id", [id]);
 
-        // r.rowCount é o número de linhas afetadas. Se 0, o id não existia.
         if (!r.rowCount) return res.status(404).json({ erro: "não encontrado" });
 
-        res.status(204).end(); // 204 = sucesso sem corpo de resposta
+        res.status(204).end();
     } catch {
         res.status(500).json({ erro: "erro interno" });
     }
 });
 
 // -----------------------------------------------------------------------------
-// SUBIR O SERVIDOR
+// INICIALIZAÇÃO DO SERVIDOR
 // -----------------------------------------------------------------------------
-// process.env.PORT permite customizar a porta via variável de ambiente (ex.: Heroku).
-// Se não houver, usamos 3000 como padrão.
+// Define a porta em que o servidor irá escutar. Utiliza a variável de ambiente PORT,
+// se disponível (comum em ambientes de produção), ou a porta 3000 por defeito.
 const PORT = process.env.PORT || 3000;
 
-// app.listen inicia o servidor HTTP e fica “escutando” pedidos.
+// Inicia o servidor HTTP, que passará a escutar por requisições na porta definida.
 app.listen(PORT, () => console.log(`http://localhost:${PORT}`));
-// Abra este link no navegador para ver a rota "/".
+
