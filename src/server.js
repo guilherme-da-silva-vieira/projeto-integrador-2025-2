@@ -140,12 +140,12 @@ app.post("/api/mensagens", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// SUBSTITUIR (PUT /produtos/:id)
+// SUBSTITUIR (PUT /api/mensagens/:id)
 // -----------------------------------------------------------------------------
 // Objetivo: substituir TODOS os campos da mensagem (put = envia o recurso completo).
 // Requer: { valores } válidos.
 app.put("/api/mensagens/:id", async (req, res) => {
-    const id = Number(req.params.id);
+    const id = Number(req.params.id);//parâmetro do id na url
     const { usuarios_id, destinatario_id,  mensagem } = req.body ?? {};
     const uId = Number(usuarios_id);
     const dId = Number(destinatario_id);
