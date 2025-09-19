@@ -207,9 +207,15 @@ app.patch("/api/mensagens/:id", async (req, res) => {
 
     // Validamos "usuarios_id" e "destinario_id" somente se ele foi enviado.
     // Se não foi enviado, manteremos "n = null" para avisar o COALESCE a não mexer no preço.
-    if (usuarios_id !== undefined || destinatario_id !== undefined) {
-        if (Number.isNaN(uId) || uId < 0 || Number.isNaN(dId) || dId < 0) {
-            return res.status(400).json({ erro: "ids de usuario e destinario devem ser número >= 0" });
+    if (usuarios_id !== undefined) {
+        if (Number.isNaN(uId) || uId < 0) {
+            return res.status(400).json({ erro: "ids de usuario devem ser número >= 0" });
+        }
+    }
+
+    if(destinatario_id !== undefined){
+        if( Number.isNaN(dId) || dId < 0){
+            return res.status(400).json({erro: "ids de destinatario devem ser número >= 0"})
         }
     }
 
