@@ -163,7 +163,7 @@ app.put("/api/mensagens/:id", async (req, res) => {
     try {
         // Atualiza ambos os campos sempre (sem manter valores antigos).
         const { rows } = await pool.query(
-            `UPDATE mensagens SET usuarios_id = $1, destinatario_id = $2 mensagem = $3 WHERE id = $4 RETURNING *`,
+            `UPDATE mensagens SET usuarios_id = $1, destinatario_id = $2, mensagem = $3 WHERE id = $4 RETURNING *`,
             [usuarios_id, destinatario_id, mensagem, id]
         );
 
